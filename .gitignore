@@ -1,0 +1,67 @@
+# Python
+*.pyc
+*.o
+*.so
+.Python
+env
+.env
+venv
+.venv
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.txt
+bin/
+include/
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.ipynb_checkpoints
+.ruff_cache/
+.vscode/
+
+# Django specific
+*.log
+*.pot
+*.mo
+*.prof
+db.sqlite3
+/media
+/static_collected # Or whatever your STATIC_ROOT is set to
+/staticfiles # Common alternative for static_collected
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.bak
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+<<<<<<< HEAD
+firebase/*.json
+=======
+firebase/*.json
+>>>>>>> 679507cae5121a693e677fe4c69948c78d6384cb
