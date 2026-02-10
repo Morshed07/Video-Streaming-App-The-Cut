@@ -5,10 +5,11 @@ from .models import Category
 
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'is_active', 'created_at', 'updated_at')
-    search_fields = ('name', 'slug')
-    list_filter = ('is_active', 'created_at', 'updated_at')
+    list_display = ('name', 'audience_type', 'is_active', 'created_at')
+    search_fields = ('name', 'audience_type')
+    list_filter = ('is_active', 'audience_type', 'created_at')
     ordering = ('name',)
     prepopulated_fields = {'slug': ('name',)}
+
 
 admin.site.register(Category, CategoryAdmin)
