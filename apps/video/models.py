@@ -5,6 +5,7 @@ from apps.category.models import (
     Category,
     Tag
 )
+from datetime import timedelta
 
 # Create your models here.
 
@@ -12,8 +13,10 @@ User = settings.AUTH_USER_MODEL
 
 
 def user_video_upload_path(instance, filename):
-    user_email = instance.email.replace("@", "_")
-    return f"{user_email}/videos/{filename}"
+    if instance.upload_by:
+        user_email = instance.upload_by.email.replace("@", "_")
+        return f"{user_email}/videos/{filename}"
+    return f"videos/{filename}"
 
 
 class Video(BaseModel):
@@ -85,3 +88,47 @@ class Video(BaseModel):
         if hours > 0:
             return f"{hours}:{minutes:02d}:{seconds:02d}"
         return f"{minutes}:{seconds:02d}"
+    
+
+class WatchHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_history')
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='watch_history')
+    watch_duration = models.DurationField(default=timedelta(seconds=0))
+    last_watched_position = models.DurationField(default=timedelta(seconds=0))
+    completed = models.BooleanField(default=False)
+    last_watched_at = models.DateTimeField(auto_now=True)
+    first_watched_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'video']
+        ordering = ['-last_watched_at']
+        verbose_name_plural = "Watch histories"
+        indexes = [
+            models.Index(fields=['user', '-last_watched_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.full_name} - {self.video.title}"
+
+    @property
+    def progress_percentage(self):
+        """Calculate watch progress percentage"""
+        if self.video.duration.total_seconds() > 0:
+            progress = (self.last_watched_position.total_seconds() / 
+                       self.video.duration.total_seconds()) * 100
+            return min(progress, 100)
+        return 0
+
+
+class Favorite(models.Model):
+    """User's favorite/liked videos"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'video']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.video.title}"
