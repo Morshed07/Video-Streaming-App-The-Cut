@@ -49,4 +49,4 @@ class AwardVote(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.user.username} voted for {self.video.title} - {self.award.title}"
+        return f"{self.user.full_name} voted for {self.video.title} - {self.award.title}"

@@ -9,19 +9,16 @@ from .models import (
 class AwardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Award
-        fields = ['id', 'title', 'slug', 'description', 'order', 'is_active']
+        fields = ['id', 'title', 'description', 'order', 'is_active']
     
 
-class VideoAwardSerializer(serializers.ModelSerializer):
-    award = AwardSerializer(read_only=True)
-    vote_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = VideoAward
-        fields = ['id', 'award', 'rank', 'awarded_date', 'vote_count']
-
-    def get_vote_count(self, obj):
-        return AwardVote.objects.filter(video=obj.video, award=obj.award).count()
+class AwardWithVoteSerializer(serializers.Serializer):
+    award_id = serializers.IntegerField()
+    order = serializers.IntegerField()
+    award_title = serializers.CharField()
+    award_description = serializers.CharField()
+    vote_count = serializers.IntegerField()
+    user_voted = serializers.BooleanField()
 
 
 class AwardVoteSerializer(serializers.ModelSerializer):
