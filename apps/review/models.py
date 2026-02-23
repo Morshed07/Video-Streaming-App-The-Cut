@@ -1,4 +1,5 @@
 from django.db import models
+from apps.core.models import BaseModel
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.video.models import Video
@@ -8,7 +9,7 @@ from apps.video.models import Video
 User = get_user_model()
 
 
-class Review(models.Model):
+class Review(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
     video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='reviews')
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
@@ -26,11 +27,10 @@ class Review(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username}'s review of {self.video.title}"
+        return f"{self.user.full_name}'s review of {self.video.title}"
     
 
-class ReviewHelpful(models.Model):
-    """Track which users found reviews helpful"""
+class ReviewHelpful(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='helpful_votes')
     created_at = models.DateTimeField(auto_now_add=True)

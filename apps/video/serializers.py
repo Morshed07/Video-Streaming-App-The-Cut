@@ -1,13 +1,12 @@
 from rest_framework import serializers
 from .models import Video
 
-from apps.award.models import AwardVote
+from apps.award.models import AwardVote, Award
 
-from apps.award.serializers import (
-    VideoAwardSerializer,
-    AwardSerializer
+from apps.category.serializers import (
+    CategorySerializer,
+    TagSerializer
 )
-from apps.category.serializers import CategorySerializer, TagSerializer
 from apps.video.models import (
     Favorite,
     WatchHistory,
@@ -17,10 +16,8 @@ from apps.review.serializers import ReviewSerializer
 
 
 class VideoListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for video lists"""
     category_name = serializers.CharField(source='category.name', read_only=True)
     average_rating = serializers.FloatField(read_only=True)
-    duration_display = serializers.CharField(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     watch_progress = serializers.SerializerMethodField()
 
@@ -31,8 +28,7 @@ class VideoListSerializer(serializers.ModelSerializer):
             'title', 
             'slug', 
             'thumbnail',
-            'duration', 
-            'duration_display', 
+            'duration',  
             'category_name', 
             'age_rating',
             'view_count', 
@@ -67,13 +63,11 @@ class VideoListSerializer(serializers.ModelSerializer):
 
 
 class VideoDetailSerializer(serializers.ModelSerializer):
-    """Detailed serializer for individual video view"""
     category = CategorySerializer(read_only=True)
-    award = VideoAwardSerializer(source='awards.all', many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     reviews = serializers.SerializerMethodField()
+    awards = serializers.SerializerMethodField()
     average_rating = serializers.FloatField(read_only=True)
-    duration_display = serializers.CharField(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     watch_progress = serializers.SerializerMethodField()
     user_review = serializers.SerializerMethodField()
@@ -84,17 +78,52 @@ class VideoDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'description',
             'video_file', 'thumbnail', 'duration',
-            'duration_display', 'age_rating', 'category',
-            'tags', 'award', 'view_count', 'like_count', 'average_rating',
+            'age_rating', 'category',
+            'awards', 'tags', 'view_count', 'like_count', 'average_rating',
             'is_favorited', 'watch_progress', 'user_review', 'user_voted_awards',
             'reviews', 'is_featured', 'is_trending', 'is_kids_friendly',
-            'published_at', 'created_at'
+            'published_at', 'created_at', 'updated_at'
         ]
 
     def get_reviews(self, obj):
         reviews = obj.reviews.filter(is_approved=True).order_by('-created_at')[:5]
         return ReviewSerializer(reviews, many=True, context=self.context).data
+    
+    def get_awards(self, obj): 
+        # Get all active awards
+        all_awards = Award.objects.filter(is_active=True).order_by('order')
+        
+        awards_data = []
+        request = self.context.get('request')
+        current_user = None
+        
+        # Get current user - handle both authenticated and anonymous users
+        if request:
+            current_user = getattr(request, 'user', None)
+        
+        for award in all_awards:
+            # Count votes for this award on this video
+            vote_count = AwardVote.objects.filter(video=obj, award=award).count()
+            
+            # Check if user voted for this award on this video
+            user_voted = False
+            if current_user and current_user.is_authenticated:
+                user_voted = AwardVote.objects.filter(
+                    user=current_user,
+                    video=obj,
+                    award=award
+                ).exists()
 
+            awards_data.append({
+                'award_id': award.id,
+                'award_order': award.order,
+                'award_title': award.title,
+                'award_description': award.description,
+                'vote_count': vote_count,
+                'user_voted': user_voted
+            })
+
+        return awards_data
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -128,13 +157,12 @@ class VideoDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_user_voted_awards(self, obj):
-        """Get list of award IDs the user has voted for this video"""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return list(AwardVote.objects.filter(
                 user=request.user, 
                 video=obj
-            ).values_list('award_id', flat=True))
+            ).values_list('award_id', 'award__title', flat=False))
         return []
     
 
@@ -152,9 +180,24 @@ class WatchHistorySerializer(serializers.ModelSerializer):
 
 
 class VideoStatsSerializer(serializers.Serializer):
-    """Serializer for video statistics"""
     total_views = serializers.IntegerField()
     total_favorites = serializers.IntegerField()
     average_rating = serializers.FloatField()
     total_reviews = serializers.IntegerField()
     watch_time_minutes = serializers.IntegerField()
+
+
+class VideoUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Video
+        fields = [
+            'id', 'title', 'slug', 'description', 
+            'video_file', 'thumbnail', 'duration', 'age_rating',
+            'category', 'tags', 'is_published', 'is_featured',
+            'is_kids_friendly', 'published_at', 'created_at'
+        ]
+        read_only_fields = ['id', 'slug', 'created_at']
+    
+    def create(self, validated_data):
+        validated_data['upload_by'] = self.context['request'].user
+        return super().create(validated_data)
