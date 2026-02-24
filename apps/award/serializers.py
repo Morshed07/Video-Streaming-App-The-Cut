@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from .models import (
     Award,
-    VideoAward,
     AwardVote
 )
+
+from apps.video.models import Video
 
 
 class AwardSerializer(serializers.ModelSerializer):
@@ -38,3 +39,20 @@ class AwardVoteSerializer(serializers.ModelSerializer):
             award=validated_data['award']
         ).delete()
         return super().create(validated_data)
+
+
+class MonthlyTopVideoSerializer(serializers.ModelSerializer):
+    total_votes = serializers.IntegerField()
+    uploaded_by = serializers.CharField(source='upload_by.full_name', read_only=True)
+
+    class Meta:
+        model = Video
+        fields = [
+            'id',
+            'title',
+            'slug',
+            'thumbnail',
+            'total_votes',
+            'uploaded_by',
+            'average_rating'
+        ]

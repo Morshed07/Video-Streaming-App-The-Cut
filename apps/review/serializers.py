@@ -20,10 +20,10 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def get_user_avatar(self, obj):
         # Assuming user model has avatar field
-        if hasattr(obj.user, 'avatar') and obj.user.avatar:
+        if hasattr(obj.user, 'profile_image') and obj.user.profile_image:
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.user.avatar.url)
+                return request.build_absolute_uri(obj.user.profile_image.url)
         return None
 
     def get_is_helpful(self, obj):

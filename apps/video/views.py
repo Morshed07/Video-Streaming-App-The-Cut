@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.db import models
+from django.db.models import Count, Q
 from rest_framework.views import APIView
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
@@ -9,13 +10,13 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from datetime import timedelta
 from apps.review.models import Review
+from apps.award.models import AwardVote
 from .models import Video, Favorite, WatchHistory
 from .serializers import (
     VideoListSerializer,
     VideoDetailSerializer,
     WatchHistorySerializer,
-    VideoStatsSerializer,
-    VideoUploadSerializer
+    VideoUploadSerializer,
 )
 from apps.review.serializers import ReviewSerializer
 
@@ -228,3 +229,13 @@ class VideoViewSet(viewsets.ReadOnlyModelViewSet):
     #     return queryset
 
 
+class VideoUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, format=None):
+        serializer = VideoUploadSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            video = serializer.save()
+            return Response(VideoDetailSerializer(video, context={'request': request}).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -191,13 +191,13 @@ class VideoUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         fields = [
-            'id', 'title', 'slug', 'description', 
+            'id', 'title', 'slug', 'description',
             'video_file', 'thumbnail', 'duration', 'age_rating',
             'category', 'tags', 'is_published', 'is_featured',
             'is_kids_friendly', 'published_at', 'created_at'
         ]
         read_only_fields = ['id', 'slug', 'created_at']
-    
+
     def create(self, validated_data):
         validated_data['upload_by'] = self.context['request'].user
         return super().create(validated_data)

@@ -3,7 +3,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from django.db.models import Count
+from django.db.models import Count, Q
+from django.utils import timezone
 from .models import (
     Award,
     VideoAward,
@@ -15,14 +16,12 @@ from .serializers import (
 )
 from apps.video.models import Video
 from apps.video.serializers import VideoListSerializer
+from rest_framework.views import APIView
 
 # Create your views here.
 
 
 class AwardViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet for awards
-    """
     queryset = Award.objects.filter(is_active=True)
     serializer_class = AwardSerializer
     permission_classes = [AllowAny]
@@ -30,7 +29,6 @@ class AwardViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'])
     def videos(self, request, slug=None):
-        """Get all videos that won this award"""
         award = self.get_object()
         video_awards = VideoAward.objects.filter(award=award).select_related('video')
         videos = [va.video for va in video_awards]
@@ -39,7 +37,6 @@ class AwardViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'])
     def leaderboard(self, request, slug=None):
-        """Get vote leaderboard for this award"""
         award = self.get_object()
         
         # Get vote counts per video
@@ -66,9 +63,6 @@ class AwardViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class AwardVoteViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for award votes
-    """
     serializer_class = AwardVoteSerializer
     permission_classes = [IsAuthenticated]
 
@@ -80,7 +74,6 @@ class AwardVoteViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def vote(self, request):
-        """Vote for a video for an award"""
         video_id = request.data.get('video_id')
         award_id = request.data.get('award_id')
         
@@ -115,3 +108,100 @@ class AwardVoteViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(vote)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class MonthlyAwardDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        now = timezone.now()
+        year = now.year
+        month = now.month
+
+        # -------- CURRENT MONTH TOP 3 --------
+        current_votes = (
+            AwardVote.objects.filter(
+                video__upload_by=request.user,
+                voted_at__year=year,
+                voted_at__month=month
+            )
+        )
+
+        total_votes_this_month = current_votes.count()
+
+        top_videos_data = (
+            current_votes
+            .values('video')
+            .annotate(total_votes=Count('id'))
+            .order_by('-total_votes')[:3]
+        )
+
+        top_video_ids = [item['video'] for item in top_videos_data]
+
+        videos = (
+            Video.objects
+            .filter(id__in=top_video_ids)
+            .annotate(
+                total_votes=Count(
+                    'award_votes',
+                    filter=Q(
+                        award_votes__voted_at__year=year,
+                        award_votes__voted_at__month=month
+                    )
+                )
+            )
+            .order_by('-total_votes')
+        )
+
+        top_videos = []
+        for index, video in enumerate(videos, start=1):
+            top_videos.append({
+                "id": video.id,
+                "title": video.title,
+                "thumbnail": video.thumbnail.url if video.thumbnail else None,
+                "total_votes": video.total_votes,
+                "rank": index
+            })
+
+        # -------- USER STATS --------
+        my_votes_this_month = 0
+        if request.user.is_authenticated:
+            my_votes_this_month = AwardVote.objects.filter(
+                user=request.user,
+                voted_at__year=year,
+                voted_at__month=month
+            ).count()
+
+        # -------- PREVIOUS MONTH TOP VIDEO --------
+        prev_month = month - 1 or 12
+        prev_year = year if month != 1 else year - 1
+
+        previous_votes = (
+            AwardVote.objects
+            .filter(voted_at__year=prev_year, voted_at__month=prev_month)
+            .values('video')
+            .annotate(total_votes=Count('id'))
+            .order_by('-total_votes')
+            .first()
+        )
+
+        previous_top_video = None
+        if previous_votes:
+            video = Video.objects.get(id=previous_votes['video'])
+            previous_top_video = {
+                "id": video.id,
+                "title": video.title,
+                "thumbnail": video.thumbnail.url if video.thumbnail else None,
+                "total_votes": previous_votes['total_votes']
+            }
+
+        return Response({
+            "current_month": {
+                "year": year,
+                "month": month,
+                "total_votes": total_votes_this_month,
+                "my_votes_this_month": my_votes_this_month,
+                "top_videos": top_videos
+            },
+            "previous_month_top_video": previous_top_video
+        })
