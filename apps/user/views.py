@@ -11,7 +11,8 @@ from .serializers import (
     ResetPasswordSerializer, 
     ChangePasswordSerializer,
     UserProfileSerializer,
-    UserUpdateSerializer
+    UserUpdateSerializer,
+    VerifyOTPSerializer
 )
 from .utils import get_tokens_for_user, send_otp_email
 
@@ -63,6 +64,7 @@ class LoginView(BaseAuthView):
 
 
 class ForgotPasswordView(BaseAuthView):
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
@@ -84,6 +86,28 @@ class ForgotPasswordView(BaseAuthView):
             "message": "OTP sent to email.", 
             "email": user.email
         }, status=status.HTTP_200_OK)
+    
+
+class VerifyOTPView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = VerifyOTPSerializer(data=request.data)
+
+        if serializer.is_valid():
+            otp_obj = serializer.validated_data["otp_obj"]
+
+            # mark otp as used
+            # otp_obj.is_used = True
+            otp_obj.save()
+            otp_obj.delete()
+
+            return Response(
+                {"message": "OTP verified successfully."},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ResendOtpView(BaseAuthView):
@@ -111,19 +135,31 @@ class ResetPasswordView(BaseAuthView):
 
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
+
         if not serializer.is_valid():
             return self.get_error_response(serializer)
-        
-        user = User.objects.get(email=serializer.validated_data['email'])
-        otp_log = OtpLog.objects.filter(user=user).first()
-        
-        if otp_log and otp_log.verify_otp(serializer.validated_data['otp']):
-            user.set_password(serializer.validated_data['password'])
-            user.save()
-            otp_log.delete()
-            return Response({"success": True, "message": "Password reset successful."}, status=status.HTTP_200_OK)
-        
-        return Response({"success": False, "message": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"success": False, "message": "User not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        user.set_password(password)
+        user.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Password reset successful."
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class ChangePasswordView(BaseAuthView):

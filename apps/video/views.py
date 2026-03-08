@@ -56,14 +56,6 @@ class VideoViewSet(viewsets.ReadOnlyModelViewSet):
         
         return queryset
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], parser_classes=(MultiPartParser, FormParser))
-    def upload(self, request):
-        serializer = self.get_serializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         # Increment view count

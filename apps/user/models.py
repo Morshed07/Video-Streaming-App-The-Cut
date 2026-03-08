@@ -120,13 +120,14 @@ class OtpLog(BaseModel):
         indexes = [
             models.Index(fields=['user', 'expires_at']),
         ]
+        
+    @property
+    def is_expired(self):
+        if not self.expires_at:
+            return True
+        return timezone.now() > self.expires_at
 
     def generate_otp(self, length=6, resend_seconds=30, expire_minutes=10):
-        """
-        Generates a new OTP, removes old OTPs,
-        stores hashed OTP, and returns raw OTP
-        """
-
         # Remove previous OTPs
         OtpLog.objects.filter(user=self.user).delete()
 
@@ -156,3 +157,5 @@ class OtpLog(BaseModel):
 
     def __str__(self):
         return f"OTP for {self.user.email}"
+
+    

@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .models import User
+from .models import User, OtpLog
 
 # =========================
 # Registration
@@ -60,18 +60,63 @@ class ForgotPasswordSerializer(serializers.Serializer):
         return value
 
 
+class VerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+
+    def validate_email(self, value):
+        value = value.lower()
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("User with this email does not exist.")
+        return value
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        input_otp = attrs.get('otp')
+
+        user = User.objects.get(email=email)
+        
+        otp_log = OtpLog.objects.filter(user=user).first()
+
+        if not otp_log:
+            raise serializers.ValidationError({"otp": "No OTP was requested for this email."})
+            
+        if otp_log.is_expired:
+            raise serializers.ValidationError({"otp": "OTP has expired. Please request a new one."})
+            
+        if not otp_log.verify_otp(input_otp):
+            raise serializers.ValidationError({"otp": "Invalid OTP."})
+
+        attrs['otp_obj'] = otp_log
+        return attrs
+
+
 # =========================
 # Reset Password
 # =========================
 class ResetPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    otp = serializers.CharField(max_length=6)
     password = serializers.CharField(min_length=8, write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['confirm_password']:
-            raise serializers.ValidationError({"password": "Passwords do not match."})
+        password = attrs.get("password")
+        confirm_password = attrs.get("confirm_password")
+        email = attrs.get("email")
+
+        if password != confirm_password:
+            raise serializers.ValidationError(
+                {"password": "Passwords do not match."}
+            )
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {"email": "User with this email does not exist."}
+            )
+
+        attrs["user"] = user
         return attrs
 
 

@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -155,10 +154,14 @@ class MonthlyAwardDashboardView(APIView):
 
         top_videos = []
         for index, video in enumerate(videos, start=1):
+            thumbnail_url = None
+            if video.thumbnail:
+                thumbnail_url = request.build_absolute_uri(video.thumbnail.url)
+
             top_videos.append({
                 "id": video.id,
                 "title": video.title,
-                "thumbnail": video.thumbnail.url if video.thumbnail else None,
+                "thumbnail": thumbnail_url,
                 "total_votes": video.total_votes,
                 "rank": index
             })
