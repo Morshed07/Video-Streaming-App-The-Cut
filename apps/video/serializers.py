@@ -1,3 +1,5 @@
+from urllib import request
+
 from rest_framework import serializers
 from .models import Video
 
@@ -28,6 +30,7 @@ class VideoListSerializer(serializers.ModelSerializer):
             'title', 
             'slug', 
             'thumbnail',
+            'video_file',
             'duration',  
             'category_name', 
             'age_rating',
@@ -72,6 +75,7 @@ class VideoDetailSerializer(serializers.ModelSerializer):
     watch_progress = serializers.SerializerMethodField()
     user_review = serializers.SerializerMethodField()
     user_voted_awards = serializers.SerializerMethodField()
+    related_videos = serializers.SerializerMethodField()
 
     class Meta:
         model = Video
@@ -81,7 +85,7 @@ class VideoDetailSerializer(serializers.ModelSerializer):
             'age_rating', 'category',
             'awards', 'tags', 'view_count', 'like_count', 'average_rating',
             'is_favorited', 'watch_progress', 'user_review', 'user_voted_awards',
-            'reviews', 'is_featured', 'is_trending', 'is_kids_friendly',
+            'reviews', 'is_featured', 'is_trending', 'is_kids_friendly', 'related_videos',
             'published_at', 'created_at', 'updated_at'
         ]
 
@@ -147,7 +151,9 @@ class VideoDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_user_review(self, obj):
+
         request = self.context.get('request')
+
         if request and request.user.is_authenticated:
             try:
                 review = Review.objects.get(user=request.user, video=obj)
@@ -157,13 +163,29 @@ class VideoDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_user_voted_awards(self, obj):
+
         request = self.context.get('request')
+        
         if request and request.user.is_authenticated:
             return list(AwardVote.objects.filter(
                 user=request.user, 
                 video=obj
             ).values_list('award_id', 'award__title', flat=False))
         return []
+    
+    def get_related_videos(self, obj):
+        # Get videos that share at least one tag with the current video
+        related_videos = Video.objects.filter(category=obj.category).exclude(id=obj.id).distinct().order_by('-published_at')[:10]
+        
+        # Get the actual Django request object from the parent serializer's context
+        current_request = self.context.get('request')
+        
+        # Pass the correct request into the nested serializer
+        return VideoListSerializer(
+            related_videos, 
+            many=True, 
+            context={'request': current_request}
+        ).data
     
 
 class WatchHistorySerializer(serializers.ModelSerializer):

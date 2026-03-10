@@ -12,10 +12,13 @@ from .serializers import (
     ChangePasswordSerializer,
     UserProfileSerializer,
     UserUpdateSerializer,
-    VerifyOTPSerializer
+    VerifyOTPSerializer,
+    SetupKidModeSerializer,
+    ToggleKidModeSerializer,
+    ChangeKidModePINSerializer
 )
 from .utils import get_tokens_for_user, send_otp_email
-
+from rest_framework.permissions import IsAuthenticated
 
 class BaseAuthView(APIView):
 
@@ -197,3 +200,107 @@ class UserProfileView(APIView):
             "success": True,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+    
+
+class SetupKidModeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        
+        # If user already has a PIN, they shouldn't use the setup endpoint
+        if user.kid_mode_pin:
+            return Response(
+                {"error": "Kid mode PIN is already set. Please use the toggle endpoint."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = SetupKidModeSerializer(data=request.data)
+        if serializer.is_valid():
+            pin = serializer.validated_data['pin']
+            
+            # Set the hashed PIN and activate kid mode
+            user.set_kid_pin(pin)
+            user.kid_mode = True
+            user.save()
+            
+            return Response(
+                {"message": "Kid mode activated successfully.", "kid_mode": True},
+                status=status.HTTP_200_OK
+            )
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ToggleKidModeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        
+        # Ensure the user has actually set up a PIN first
+        if not user.kid_mode_pin:
+            return Response(
+                {"error": "Kid mode PIN has not been set up yet."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ToggleKidModeSerializer(data=request.data)
+        if serializer.is_valid():
+            pin = serializer.validated_data['pin']
+            
+            # Verify the PIN
+            if not user.check_kid_pin(pin):
+                return Response(
+                    {"error": "Incorrect PIN."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Toggle the boolean state
+            user.kid_mode = not user.kid_mode
+            user.save()
+            
+            mode_status = "Kid Mode" if user.kid_mode else "Adult Mode"
+            return Response(
+                {"message": f"Successfully switched to {mode_status}.", "kid_mode": user.kid_mode},
+                status=status.HTTP_200_OK
+            )
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ChangeKidModePINAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        
+        # Guard clause: Ensure the user actually has a PIN to change
+        if not user.kid_mode_pin:
+            return Response(
+                {"error": "Kid mode PIN has not been set up yet. Please set it up first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ChangeKidModePINSerializer(data=request.data)
+        if serializer.is_valid():
+            old_pin = serializer.validated_data['old_pin']
+            new_pin = serializer.validated_data['new_pin']
+            
+            # Verify that the old PIN provided is correct
+            if not user.check_kid_pin(old_pin):
+                return Response(
+                    {"error": "Incorrect current PIN."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Set the new PIN and save
+            user.set_kid_pin(new_pin)
+            user.save()
+            
+            return Response(
+                {"message": "Successfully changed Kid Mode Key."},
+                status=status.HTTP_200_OK
+            )
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

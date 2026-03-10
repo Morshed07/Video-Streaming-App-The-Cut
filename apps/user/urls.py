@@ -7,7 +7,10 @@ from .views import (
     ResetPasswordView, 
     ChangePasswordView,
     UserProfileView,
-    VerifyOTPView
+    VerifyOTPView,
+    SetupKidModeAPIView,
+    ToggleKidModeAPIView,
+    ChangeKidModePINAPIView
 )
 
 urlpatterns = [
@@ -20,5 +23,11 @@ urlpatterns = [
     path('auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('auth/me/', UserProfileView.as_view(), name='user-profile'),
     path('auth/update-profile/', UserProfileView.as_view(), name='update-profile'),
+
+    path('kid-mode/setup-pin/', SetupKidModeAPIView.as_view(), name='setup-kid-mode'),
+    path('kid-mode/toggle/', ToggleKidModeAPIView.as_view(), name='toggle-kid-mode'),
+    
+    # NEW: Endpoint to change the PIN
+    path('kid-mode/change-pin/', ChangeKidModePINAPIView.as_view(), name='change-kid-mode-pin'),
 
 ]

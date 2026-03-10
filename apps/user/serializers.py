@@ -158,3 +158,37 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if value and len(value) < 2:
             raise serializers.ValidationError("Full name must be at least 2 characters long.")
         return value
+    
+
+# =========================
+# Kid Mode Pin Serializer
+# =========================
+
+
+class SetupKidModeSerializer(serializers.Serializer):
+    pin = serializers.CharField(max_length=4, min_length=4)
+
+    def validate_pin(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("PIN must contain only numbers.")
+        return value
+
+
+class ToggleKidModeSerializer(serializers.Serializer):
+    pin = serializers.CharField(max_length=4, min_length=4)
+
+
+class ChangeKidModePINSerializer(serializers.Serializer):
+    old_pin = serializers.CharField(max_length=4, min_length=4)
+    new_pin = serializers.CharField(max_length=4, min_length=4)
+
+    def validate(self, data):
+        # Ensure both inputs are only digits
+        if not data['old_pin'].isdigit() or not data['new_pin'].isdigit():
+            raise serializers.ValidationError("PINs must contain only numbers.")
+            
+        # Prevent changing the PIN to the exact same thing
+        if data['old_pin'] == data['new_pin']:
+            raise serializers.ValidationError("New PIN cannot be the same as the old PIN.")
+            
+        return data

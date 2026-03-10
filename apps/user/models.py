@@ -69,6 +69,8 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     kid_mode = models.BooleanField(default=False)
 
+    kid_mode_pin = models.CharField(max_length=128, null=True, blank=True)
+
     profile_image = models.ImageField(
         upload_to=user_image_upload_path,
         null=True,
@@ -100,6 +102,14 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
             and self.subscription_end_date
             and self.subscription_end_date >= timezone.now()
         )
+    
+    def set_kid_pin(self, raw_pin):
+        self.kid_mode_pin = make_password(raw_pin)
+        
+    def check_kid_pin(self, raw_pin):
+        if not self.kid_mode_pin:
+            return False
+        return check_password(raw_pin, self.kid_mode_pin)
 
 
 # =========================
@@ -120,7 +130,7 @@ class OtpLog(BaseModel):
         indexes = [
             models.Index(fields=['user', 'expires_at']),
         ]
-        
+
     @property
     def is_expired(self):
         if not self.expires_at:
