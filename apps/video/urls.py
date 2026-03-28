@@ -4,7 +4,8 @@ from .views import (
     VideoViewSet,
     VideoUploadView,
     TrendingVideosListView,
-    TopVotedVideosListView
+    TopVotedVideosListView,
+    ChildrenFriendlyVideosListView
 )
 
 app_name = 'videos'
@@ -19,4 +20,5 @@ urlpatterns = [
     path('upload/', VideoUploadView.as_view(), name='video-upload'),
     path('trending-videos/', TrendingVideosListView.as_view(), name='trending-videos'),
     path('awards/winners/', TopVotedVideosListView.as_view(), name='award-winners'),
+    path('children-friendly/', ChildrenFriendlyVideosListView.as_view(), name='children-friendly-videos'),
 ]
