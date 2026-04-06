@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import User, OtpLog
+from apps.video.models import Favorite
+from apps.award.models import AwardVote
 
 # =========================
 # Registration
@@ -138,11 +140,24 @@ class ChangePasswordSerializer(serializers.Serializer):
 # User Profile
 # =========================
 class UserProfileSerializer(serializers.ModelSerializer):
+    total_uploaded_videos_count = serializers.SerializerMethodField()
+    total_likes_on_my_videos = serializers.SerializerMethodField()
+    total_votes_cast_count = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'full_name', 'last_login', 'profile_image', 'kid_mode', 'subscription_type')
+        fields = ('id', 'email', 'full_name', 'last_login', 'profile_image', 'is_premium', 'kid_mode', 'subscription_type', 'total_uploaded_videos_count', 'total_likes_on_my_videos', 'total_votes_cast_count')
         read_only_fields = ('email', 'last_login')
 
+    def get_total_uploaded_videos_count(self, obj):
+        return obj.uploaded_videos.count()
+
+    def get_total_likes_on_my_videos(self, obj):
+        return Favorite.objects.filter(video__upload_by=obj).count()
+
+    def get_total_votes_cast_count(self, obj):
+        return AwardVote.objects.filter(user=obj).count()
+    
 
 # =========================
 # Update Profile

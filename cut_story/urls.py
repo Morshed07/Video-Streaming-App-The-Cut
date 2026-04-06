@@ -10,7 +10,8 @@ urlpatterns = [
     path('api/categories/', include('apps.category.urls')),
     path('api/awards/', include('apps.award.urls')),
     path('api/videos/', include('apps.video.urls')),
-    path('api/reviews/', include('apps.review.urls'))
+    path('api/reviews/', include('apps.review.urls')),
+    path('api/notifications/', include('apps.notification.urls')),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

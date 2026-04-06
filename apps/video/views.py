@@ -58,9 +58,6 @@ class VideoViewSet(viewsets.ReadOnlyModelViewSet):
         return VideoListSerializer
 
     def get_queryset(self):
-        """
-        Primary logic for Kid Mode filtering happens here.
-        """
         queryset = super().get_queryset()
         user = self.request.user
 
@@ -79,10 +76,16 @@ class VideoViewSet(viewsets.ReadOnlyModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        # Increment view count
+        
+        # 1. Atomic update for view count (Efficient)
         Video.objects.filter(pk=instance.pk).update(view_count=F('view_count') + 1)
-        # Pass request in context for absolute media URLs
-        serializer = self.get_serializer(instance)
+        
+        if request.user.is_authenticated:
+            WatchHistory.objects.get_or_create(user=request.user, video=instance)
+        
+        # 3. Explicitly pass context to ensure absolute URLs (thumbnail, video_file)
+        serializer = self.get_serializer(instance, context={'request': request})
+        
         return Response(serializer.data)
 
     # --- HELPER FOR PAGINATED ACTIONS ---
@@ -186,48 +189,35 @@ class VideoViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=400)
 
-    # @action(detail=True, methods=['get'])
-    # def stats(self, request, slug=None):
-    #     video = self.get_object()
-        
-    #     stats = {
-    #         'total_views': video.view_count,
-    #         'total_favorites': video.like_count,
-    #         'average_rating': video.average_rating or 0,
-    #         'total_reviews': video.reviews.filter(is_approved=True).count()
-    #     }
-        
-    #     serializer = VideoStatsSerializer(stats)
-    #     return Response(serializer.data)
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_published_videos(self, request):
+        """List of videos uploaded by the current user that ARE published"""
+        videos = Video.objects.filter(
+            upload_by=request.user, 
+            is_published=True
+        ).order_by('-published_at')
+        return self._get_paginated_action_response(videos)
 
-    # def _is_children_mode_active(self):
-    #     """Check if user is in children mode"""
-    #     if self.request.user.is_authenticated:
-    #         try:
-    #             return self.request.user.children_mode.is_currently_active
-    #         except ChildrenMode.DoesNotExist:
-    #             pass
-    #     return False
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_pending_videos(self, request):
+        """List of videos uploaded by the current user that are NOT yet published"""
+        # Note: We use Video.objects here instead of get_queryset() 
+        # because get_queryset() excludes unpublished videos by default.
+        videos = Video.objects.filter(
+            upload_by=request.user,
+            is_published=False
+        ).order_by('-created_at')
+        return self._get_paginated_action_response(videos)
 
-    # def _filter_for_children_mode(self, queryset):
-    #     """Filter videos for children mode"""
-    #     try:
-    #         parental_control = self.request.user.parental_control
-    #         # Filter by age rating
-    #         age_ratings = ['G', 'PG']
-    #         if parental_control.max_age_rating == 'PG13':
-    #             age_ratings.append('PG13')
-            
-    #         queryset = queryset.filter(
-    #             age_rating__in=age_ratings,
-    #             is_kids_friendly=True
-    #         ).exclude(
-    #             category__in=parental_control.blocked_categories.all()
-    #         )
-    #     except ParentalControl.DoesNotExist:
-    #         queryset = queryset.filter(is_kids_friendly=True, age_rating='G')
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_favorites(self, request):
+        """List of videos the current user has favorited"""
+        # We find all favorites for this user and get the related video objects
+        favorite_ids = Favorite.objects.filter(user=request.user).values_list('video_id', flat=True)
         
-    #     return queryset
+        # We use get_queryset() here to ensure Kid Mode filters still apply to favorites
+        videos = self.get_queryset().filter(id__in=favorite_ids)
+        return self._get_paginated_action_response(videos)
 
 
 class VideoUploadView(APIView):
@@ -346,3 +336,12 @@ class ChildrenFriendlyVideosListView(APIView):
         
         # Use the custom response method from your VideoPagination class
         return paginator.get_paginated_response(serializer.data)
+    
+
+class HistoryListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        history = WatchHistory.objects.filter(user=request.user).select_related('video').order_by('-last_watched_at')
+        serializer = WatchHistorySerializer(history, many=True, context={'request': request})
+        return Response(serializer.data)
