@@ -32,6 +32,7 @@ class VideoListSerializer(serializers.ModelSerializer):
             'thumbnail',
             'video_file',
             'duration',  
+            'status',
             'category_name', 
             'age_rating',
             'view_count', 
@@ -82,7 +83,7 @@ class VideoDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'slug', 'description',
             'video_file', 'thumbnail', 'duration',
-            'age_rating', 'category',
+            'age_rating', 'category', 'status',
             'awards', 'tags', 'view_count', 'like_count', 'average_rating',
             'is_favorited', 'watch_progress', 'user_review', 'user_voted_awards',
             'reviews', 'is_featured', 'is_trending', 'is_kids_friendly', 'related_videos',
@@ -130,12 +131,14 @@ class VideoDetailSerializer(serializers.ModelSerializer):
         return awards_data
 
     def get_is_favorited(self, obj):
+
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(user=request.user, video=obj).exists()
         return False
 
     def get_watch_progress(self, obj):
+        
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             try:

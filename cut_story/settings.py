@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
+
     # <-----------End----------->
 
     #############################
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
     'apps.award',
     'apps.video',
     'apps.review',
+    'apps.notification',
 
     # <-----------End----------->
 

@@ -25,6 +25,15 @@ class Video(BaseModel):
         ('10+', '10+'),
         ('14+', '14+'),
     ]
+
+    UPLOAD_STATUS_CHOICES = [
+            ('pending', 'Pending Review'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
+            ('needs_changes', 'Needs Changes'),
+            ('flagged', 'Flagged for Review'),
+            ('festival', 'Festival')
+        ]
     upload_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='uploaded_videos')
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
@@ -38,6 +47,7 @@ class Video(BaseModel):
     duration = models.DurationField(help_text="Video duration")
     age_rating = models.CharField(max_length=10, choices=KIDS_AGE_RATINGS, null=True, blank=True)
     
+    status = models.CharField(max_length=20, choices=UPLOAD_STATUS_CHOICES, default='pending')
     # Categories and classification
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='videos')
     tags = models.ManyToManyField(Tag, blank=True, related_name='videos')
@@ -93,8 +103,8 @@ class Video(BaseModel):
 class WatchHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watch_history')
     video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='watch_history')
-    watch_duration = models.DurationField(default=timedelta(seconds=0))
-    last_watched_position = models.DurationField(default=timedelta(seconds=0))
+    watch_duration = models.DurationField(default=timedelta(seconds=0), null=True, blank=True)
+    last_watched_position = models.DurationField(default=timedelta(seconds=0), null=True, blank=True)
     completed = models.BooleanField(default=False)
     last_watched_at = models.DateTimeField(auto_now=True)
     first_watched_at = models.DateTimeField(auto_now_add=True)
@@ -132,3 +142,4 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.video.title}"
+

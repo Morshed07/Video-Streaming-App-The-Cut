@@ -221,11 +221,11 @@ class SetupKidModeAPIView(APIView):
             
             # Set the hashed PIN and activate kid mode
             user.set_kid_pin(pin)
-            user.kid_mode = True
+            # user.kid_mode = True
             user.save()
             
             return Response(
-                {"message": "Kid mode activated successfully.", "kid_mode": True},
+                {"message": "Pin set successfully."},
                 status=status.HTTP_200_OK
             )
             
