@@ -31,6 +31,8 @@ class VideoListSerializer(serializers.ModelSerializer):
             'slug', 
             'thumbnail',
             'video_file',
+            'hls_url',        # ← add this
+            'hls_status',
             'duration',  
             'status',
             'category_name', 
@@ -82,7 +84,7 @@ class VideoDetailSerializer(serializers.ModelSerializer):
         model = Video
         fields = [
             'id', 'title', 'slug', 'description',
-            'video_file', 'thumbnail', 'duration',
+            'video_file', 'hls_url', 'hls_status', 'thumbnail', 'duration',
             'age_rating', 'category', 'status',
             'awards', 'tags', 'view_count', 'like_count', 'average_rating',
             'is_favorited', 'watch_progress', 'user_review', 'user_voted_awards',
