@@ -1,376 +1,93 @@
-# DramaSphere Backend 🎬
+# Backend
 
-![Database Diagram](./Dramasphere.png)
 
-A scalable Django-powered backend for **DramaSphere**, a modern video streaming platform focused on drama content, featuring **parental controls**, **monthly voting systems**, subscription management, and cloud-native media delivery using **AWS S3 + CDN**.
 
----
+## Getting started
 
-## 🚀 Features
+To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
-* 🔐 JWT Authentication & User Management
-* 🎥 Video Streaming API
-* 📂 Categories & Tags
-* ❤️ Favorites & Watch History
-* ⭐ Reviews & Helpful Votes
-* 🏆 Monthly Award Voting System
-* 👨‍👩‍👧 Parental Control / Kids Mode
-* 🔔 Notification System
-* 💳 Subscription Management with RevenueCat
-* ☁️ AWS S3 Media Storage
-* 🌍 CDN Optimized Streaming
-* 🛡 Django Admin Dashboard
-* ⚡ REST API using DRF
-* 📈 Optimized PostgreSQL Architecture
+Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
 
----
+## Add your files
 
-# 🏗 Tech Stack
+- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
+- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
 
-| Technology            | Usage                   |
-| --------------------- | ----------------------- |
-| Python                | Backend Language        |
-| Django                | Web Framework           |
-| Django REST Framework | API Development         |
-| PostgreSQL            | Database                |
-| Redis                 | Caching                 |
-| Celery                | Background Jobs         |
-| AWS S3                | File Storage            |
-| CDN                   | Global Content Delivery |
-| RevenueCat            | Subscription Management |
-| JWT                   | Authentication          |
-| Gunicorn              | Production Server       |
-| Nginx                 | Reverse Proxy           |
-
----
-
-# 📦 Core Modules
-
-## 👤 Authentication & Users
-
-* User Registration/Login
-* OTP Verification
-* JWT Authentication
-* User Profiles
-* Subscription Tracking
-* Kids Mode PIN Protection
-
----
-
-## 🎬 Video Management
-
-* Video Upload & Streaming
-* Featured Videos
-* Trending Videos
-* Categories & Tags
-* Age Ratings
-* Audience Filtering
-* Publishing Workflow
-
----
-
-## 👨‍👩‍👧 Parental Controls
-
-DramaSphere includes advanced parental safety features:
-
-* Kids Mode
-* PIN Protected Access
-* Kids-friendly content filtering
-* Audience type restrictions
-* Age-rated videos
-
----
-
-## 🏆 Monthly Award Voting System
-
-Users can:
-
-* Vote for videos monthly
-* Participate in award events
-* Track rankings
-* View winning videos
-
-Database entities:
-
-* `award_award`
-* `award_awardvote`
-* `award_videoaward`
-
----
-
-## ⭐ Review System
-
-Features:
-
-* Video Reviews
-* Helpful Votes
-* Review Ranking
-* Community Engagement
-
----
-
-## ❤️ User Engagement
-
-* Favorite Videos
-* Watch History
-* Continue Watching
-* Notifications
-* Likes & Views Tracking
-
----
-
-# ☁️ AWS S3 + CDN Integration
-
-DramaSphere uses:
-
-* **AWS S3** for secure and scalable media storage
-* **CDN** for high-speed global content delivery
-
-Benefits:
-
-* Faster streaming
-* Lower server load
-* Better scalability
-* Improved user experience
-
----
-
-# 💳 RevenueCat Integration
-
-Subscription management is powered by **RevenueCat**.
-
-Supported Features:
-
-* Monthly subscriptions
-* Premium access control
-* Subscription validation
-* Expiration tracking
-* Cross-platform sync
-
----
-
-# 🗄 Database Architecture
-
-The backend architecture includes:
-
-* Users
-* Videos
-* Categories
-* Tags
-* Favorites
-* Reviews
-* Notifications
-* Awards
-* Watch History
-* Permissions & Groups
-
----
-
-# 📊 ER Diagram
-
-The following ER diagram represents the complete backend database architecture:
-
-![DramaSphere Database ERD](./Dramasphere.png)
-
----
-
-# ⚙️ Installation
-
-## 1️⃣ Clone Repository
-
-```bash
-git clone https://github.com/yourusername/dramasphere-backend.git
-
-cd dramasphere-backend
+```
+cd existing_repo
+git remote add origin https://gitlab.betopialimited.com/join-venture-ai/kelgray505-dramasphere/backend.git
+git branch -M main
+git push -uf origin main
 ```
 
----
+## Integrate with your tools
 
-## 2️⃣ Create Virtual Environment
+- [ ] [Set up project integrations](https://gitlab.betopialimited.com/join-venture-ai/kelgray505-dramasphere/backend/-/settings/integrations)
 
-```bash
-python -m venv venv
-```
+## Collaborate with your team
 
-### Activate Environment
+- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
+- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
+- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
+- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
+- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
 
-#### Linux / macOS
+## Test and Deploy
 
-```bash
-source venv/bin/activate
-```
+Use the built-in continuous integration in GitLab.
 
-#### Windows
+- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
+- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
+- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
+- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
+- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
-```bash
-venv\Scripts\activate
-```
+***
 
----
+# Editing this README
 
-## 3️⃣ Install Dependencies
+When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
 
-```bash
-pip install -r requirements.txt
-```
+## Suggestions for a good README
 
----
+Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
 
-## 4️⃣ Environment Variables
+## Name
+Choose a self-explaining name for your project.
 
-Create `.env`
+## Description
+Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-```env
-DEBUG=True
+## Badges
+On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
 
-SECRET_KEY=your_secret_key
+## Visuals
+Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
-ALLOWED_HOSTS=*
+## Installation
+Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
-DATABASE_URL=postgresql://postgres:password@localhost:5432/dramasphere
+## Usage
+Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-REDIS_URL=redis://127.0.0.1:6379
+## Support
+Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
 
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_STORAGE_BUCKET_NAME=your_bucket
-AWS_S3_REGION_NAME=your_region
-AWS_S3_CUSTOM_DOMAIN=cdn.example.com
+## Roadmap
+If you have ideas for releases in the future, it is a good idea to list them in the README.
 
-REVENUECAT_API_KEY=your_revenuecat_key
+## Contributing
+State if you are open to contributions and what your requirements are for accepting them.
 
-JWT_SECRET_KEY=your_jwt_secret
-```
+For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
 
----
+You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
 
-# 🛠 Run Migrations
+## Authors and acknowledgment
+Show your appreciation to those who have contributed to the project.
 
-```bash
-python manage.py migrate
-```
+## License
+For open source projects, say how it is licensed.
 
----
-
-# 👤 Create Superuser
-
-```bash
-python manage.py createsuperuser
-```
-
----
-
-# ▶️ Run Development Server
-
-```bash
-python manage.py runserver
-```
-
----
-
-# ⚡ Run Celery Worker
-
-```bash
-celery -A config worker -l info
-```
-
----
-
-# 🔥 Start Redis
-
-```bash
-redis-server
-```
-
----
-
-# 📡 Example API Routes
-
-```http
-/api/auth/
-/api/videos/
-/api/categories/
-/api/reviews/
-/api/favorites/
-/api/awards/
-/api/notifications/
-```
-
----
-
-# 🔐 Authentication
-
-DramaSphere uses JWT Authentication.
-
-Example:
-
-```http
-Authorization: Bearer <token>
-```
-
----
-
-# 📁 Media Handling
-
-Uploaded media is stored in:
-
-* AWS S3
-* Delivered through CDN
-
-Supported files:
-
-* Video files
-* Thumbnails
-* Profile images
-
----
-
-# 🚀 Recommended Production Stack
-
-* Ubuntu VPS
-* Nginx
-* Gunicorn
-* PostgreSQL
-* Redis
-* Celery
-* Supervisor
-* Cloudflare CDN
-
----
-
-# 🧪 Future Improvements
-
-* AI Recommendations
-* Live Streaming
-* Smart Content Moderation
-* Multi-language Subtitles
-* Offline Downloads
-* Social Features
-
----
-
-# 🤝 Contributing
-
-Pull requests are welcome.
-
-Steps:
-
-1. Fork repository
-2. Create feature branch
-3. Commit changes
-4. Push branch
-5. Open Pull Request
-
----
-
-# 📄 License
-
-MIT License
-
----
-
-# 👨‍💻 Developed By
-
-**DramaSphere Backend Team**
-
-Built with ❤️ using Django, DRF, PostgreSQL, AWS S3, and RevenueCat.
+## Project status
+If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
