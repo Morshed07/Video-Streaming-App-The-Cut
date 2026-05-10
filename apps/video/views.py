@@ -22,6 +22,8 @@ from .serializers import (
     VideoUploadSerializer,
 )
 from apps.review.serializers import ReviewSerializer
+import hmac, hashlib
+from .mediaconvert import trigger_hls_transcode
 
 
 # Create your views here.
@@ -225,14 +227,38 @@ class VideoUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, format=None):
-        serializer = VideoUploadSerializer(data=request.data, context={'request': request})
+        serializer = VideoUploadSerializer(
+            data=request.data, 
+            context={'request': request}
+        )
         if serializer.is_valid():
             try:
                 video = serializer.save()
-                return Response(VideoDetailSerializer(video, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+                # ── Trigger HLS transcoding after upload ──
+                try:
+                    # video.video_file.name = the S3 key
+                    job_id, hls_url = trigger_hls_transcode(
+                        video_id=video.id,
+                        s3_input_key=video.video_file.name
+                    )
+                    # Save HLS info to model
+                    video.hls_job_id = job_id
+                    video.hls_url = hls_url
+                    video.hls_status = 'processing'
+                    video.save(update_fields=['hls_job_id', 'hls_url', 'hls_status'])
+
+                except Exception as e:
+                    # Don't fail the upload if transcode trigger fails
+                    print(f"MediaConvert trigger failed: {e}")
+
+                return Response(
+                    VideoDetailSerializer(video, context={'request': request}).data,
+                    status=status.HTTP_201_CREATED
+                )
             except IntegrityError:
                 return Response(
-                    {"error": "A video with a similar title already exists. Please use a different title."},
+                    {"error": "A video with a similar title already exists."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -345,3 +371,37 @@ class HistoryListView(APIView):
         history = WatchHistory.objects.filter(user=request.user).select_related('video').order_by('-last_watched_at')
         serializer = WatchHistorySerializer(history, many=True, context={'request': request})
         return Response(serializer.data)
+    
+
+class MediaConvertWebhookView(APIView):
+    permission_classes = [AllowAny]  # AWS calls this, no auth token
+
+    def post(self, request, format=None):
+        body = request.data
+
+        # AWS SNS first sends a subscription confirmation
+        if body.get('Type') == 'SubscriptionConfirmation':
+            import urllib.request
+            urllib.request.urlopen(body['SubscribeURL'])
+            return Response({'status': 'subscribed'})
+
+        # Parse the actual MediaConvert event
+        message = json.loads(body.get('Message', '{}'))
+        detail = message.get('detail', {})
+        job_id = detail.get('jobId')
+        job_status = detail.get('status')  # COMPLETE or ERROR
+
+        if not job_id:
+            return Response({'status': 'ignored'})
+
+        try:
+            video = Video.objects.get(hls_job_id=job_id)
+            if job_status == 'COMPLETE':
+                video.hls_status = 'ready'
+            elif job_status == 'ERROR':
+                video.hls_status = 'failed'
+            video.save(update_fields=['hls_status'])
+        except Video.DoesNotExist:
+            pass
+
+        return Response({'status': 'ok'})

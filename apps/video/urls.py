@@ -5,7 +5,8 @@ from .views import (
     VideoUploadView,
     TrendingVideosListView,
     TopVotedVideosListView,
-    ChildrenFriendlyVideosListView
+    ChildrenFriendlyVideosListView,
+    MediaConvertWebhookView
 )
 
 app_name = 'videos'
@@ -21,4 +22,5 @@ urlpatterns = [
     path('trending-videos/', TrendingVideosListView.as_view(), name='trending-videos'),
     path('awards/winners/', TopVotedVideosListView.as_view(), name='award-winners'),
     path('children-friendly/', ChildrenFriendlyVideosListView.as_view(), name='children-friendly-videos'),
+    path('webhooks/mediaconvert/', MediaConvertWebhookView.as_view(), name='mediaconvert-webhook'),
 ]

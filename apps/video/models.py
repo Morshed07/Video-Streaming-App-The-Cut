@@ -62,6 +62,20 @@ class Video(BaseModel):
     is_trending = models.BooleanField(default=False)
     is_kids_friendly = models.BooleanField(default=False)
     
+    #Aws 
+    hls_url = models.URLField(null=True, blank=True)         # master playlist
+    hls_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('processing', 'Processing'),
+            ('ready', 'Ready'),
+            ('failed', 'Failed'),
+        ],
+        default='pending'
+    )
+    hls_job_id = models.CharField(max_length=255, null=True, blank=True)  # MediaConvert job ID
+
     # Timestamps
     published_at = models.DateTimeField(null=True, blank=True)
 
